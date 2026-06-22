@@ -334,10 +334,15 @@
       background:#000;
     }
 
-    @media(max-width:390px){
-      .titleLogo{width:38px;height:38px}
-      .titleLine{gap:8px}
-      .card{min-height:215px}
+.fullscreenModal{
+  width:100vw !important;
+  height:100dvh !important;
+  max-width:none !important;
+  max-height:none !important;
+  border-radius:0 !important;
+  padding:20px;
+  overflow:auto;
+}
     }
   </style>
 </head>
@@ -366,7 +371,7 @@
 </div>
 
 <div class="modalBackdrop" id="formModal">
-  <div class="modal">
+  <div class="modal fullscreenModal">
     <h2 id="formTitle">Opret person</h2>
 
     <input type="hidden" id="editId">
