@@ -132,9 +132,10 @@
       overflow:auto;
     }
 
-    .grid.odd .card:first-child{
-      grid-column:1 / -1;
-    }
+.grid.odd .card:first-child{
+  grid-column:1 / -1;
+  min-height:260px;
+}
 
     .card{
       background:linear-gradient(180deg,var(--card2),var(--card));
@@ -185,17 +186,17 @@
       width:min(78%,24dvh,260px);
     }
 
-    .grid.compact.odd .card:first-child .avatar{
-      width:min(58vw,26dvh,300px);
-    }
+.grid.compact.odd .card:first-child .avatar{
+  width:min(180px,35vw);
+}
 
     .grid.scroll .avatar{
       width:min(82%,220px);
     }
 
-    .grid.scroll.odd .card:first-child .avatar{
-      width:min(55vw,300px);
-    }
+.grid.scroll.odd .card:first-child .avatar{
+  width:min(180px,35vw);
+}
 
     .avatar img{
       width:100%;
