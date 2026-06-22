@@ -108,22 +108,32 @@
     }
 
     /* Automatisk billedtelefon-layout */
-    .grid.few{
+    .grid.one{
       grid-template-columns:1fr;
-      grid-auto-rows:1fr;
+      grid-template-rows:1fr;
       overflow:hidden;
     }
 
-    .grid.four{
-      grid-template-columns:repeat(2,1fr);
-      grid-template-rows:repeat(2,1fr);
+    .grid.two{
+      grid-template-columns:1fr;
+      grid-template-rows:repeat(2,minmax(0,1fr));
       overflow:hidden;
     }
 
-    .grid.many{
-      grid-template-columns:repeat(2,1fr);
+    .grid.compact{
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      grid-auto-rows:minmax(0,1fr);
+      overflow:hidden;
+    }
+
+    .grid.scroll{
+      grid-template-columns:repeat(2,minmax(0,1fr));
       grid-auto-rows:minmax(260px,auto);
       overflow:auto;
+    }
+
+    .grid.odd .card:first-child{
+      grid-column:1 / -1;
     }
 
     .card{
@@ -140,9 +150,11 @@
       -webkit-tap-highlight-color:transparent;
     }
 
-    .grid.few .card,
-    .grid.four .card{
+    .grid.one .card,
+    .grid.two .card,
+    .grid.compact .card{
       min-height:0;
+      overflow:hidden;
     }
 
     .card:active{transform:scale(.985)}
@@ -161,16 +173,28 @@
       flex-shrink:0;
     }
 
-    .grid.few .avatar{
-      width:min(72vw,42dvh,430px);
+    .grid.one .avatar{
+      width:min(76vw,48dvh,460px);
     }
 
-    .grid.four .avatar{
-      width:min(82%,27dvh,260px);
+    .grid.two .avatar{
+      width:min(62vw,25dvh,340px);
     }
 
-    .grid.many .avatar{
+    .grid.compact .avatar{
+      width:min(78%,24dvh,260px);
+    }
+
+    .grid.compact.odd .card:first-child .avatar{
+      width:min(58vw,26dvh,300px);
+    }
+
+    .grid.scroll .avatar{
       width:min(82%,220px);
+    }
+
+    .grid.scroll.odd .card:first-child .avatar{
+      width:min(55vw,300px);
     }
 
     .avatar img{
@@ -583,14 +607,24 @@
   }
 
   function updateGridLayout(){
-    contactGrid.classList.remove("few", "four", "many");
+    contactGrid.classList.remove("one", "two", "compact", "scroll", "odd");
 
-    if(contacts.length <= 2){
-      contactGrid.classList.add("few");
-    }else if(contacts.length <= 4){
-      contactGrid.classList.add("four");
+    const count = contacts.length;
+
+    if(count === 1){
+      contactGrid.classList.add("one", "odd");
+    }else if(count === 2){
+      contactGrid.classList.add("two");
+    }else if(count <= 4){
+      contactGrid.classList.add("compact");
+      if(count % 2 === 1){
+        contactGrid.classList.add("odd");
+      }
     }else{
-      contactGrid.classList.add("many");
+      contactGrid.classList.add("scroll");
+      if(count % 2 === 1){
+        contactGrid.classList.add("odd");
+      }
     }
   }
 
