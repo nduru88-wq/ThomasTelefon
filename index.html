@@ -1,0 +1,878 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8" />
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Min telefon" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0b1220" />
+
+  <title>Min telefon</title>
+
+  <link rel="apple-touch-icon" href="telefon.png" />
+  <link rel="icon" href="telefon.png" />
+
+  <link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css">
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:rgba(255,255,255,.08);
+      --card2:rgba(255,255,255,.13);
+      --text:#fff;
+      --muted:rgba(255,255,255,.72);
+      --stroke:rgba(255,255,255,.14);
+      --green:#27d17c;
+      --red:#ff5a5a;
+      --radius:24px;
+      --shadow:0 10px 28px rgba(0,0,0,.35);
+    }
+
+    *{box-sizing:border-box}
+
+    html,body{
+      margin:0;
+      height:100%;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      background:
+        radial-gradient(1100px 700px at 50% 0%, rgba(80,140,255,.25), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      overscroll-behavior:none;
+      touch-action:manipulation;
+    }
+
+    body{overflow:hidden}
+
+    .app{
+      height:100dvh;
+      max-width:900px;
+      margin:auto;
+      padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    header{
+      text-align:center;
+      padding-top:4px;
+    }
+
+    .titleLine{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+    }
+
+    .titleLogo{
+      width:42px;
+      height:42px;
+      border-radius:12px;
+      object-fit:contain;
+      background:rgba(255,255,255,.08);
+      border:1px solid var(--stroke);
+      padding:5px;
+      box-shadow:0 6px 18px rgba(0,0,0,.25);
+      -webkit-tap-highlight-color:transparent;
+      user-select:none;
+    }
+
+    .titleLogo:active{transform:scale(.96)}
+
+    h1{
+      margin:0;
+      font-size:clamp(24px,6vw,34px);
+      line-height:1.05;
+      white-space:nowrap;
+    }
+
+    .hint{
+      margin:8px 0 0;
+      color:var(--muted);
+      font-size:15px;
+    }
+
+    .grid{
+      flex:1;
+      min-height:0;
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:14px;
+      overflow:auto;
+      padding-bottom:8px;
+    }
+
+    .card{
+      background:linear-gradient(180deg,var(--card2),var(--card));
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:12px;
+      min-height:230px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:space-between;
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    .card:active{transform:scale(.985)}
+
+    .avatar{
+      width:min(154px,35vw);
+      aspect-ratio:1;
+      border-radius:999px;
+      background:rgba(255,255,255,.10);
+      border:1px solid var(--stroke);
+      overflow:hidden;
+      display:grid;
+      place-items:center;
+      font-size:54px;
+      font-weight:900;
+    }
+
+    .avatar img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+
+    .name{
+      margin:10px 0 3px;
+      text-align:center;
+      font-size:clamp(18px,4.8vw,23px);
+      font-weight:900;
+      line-height:1.05;
+    }
+
+    .phone{
+      margin:0;
+      color:var(--muted);
+      font-size:14px;
+      text-align:center;
+    }
+
+    .tag{
+      margin-top:10px;
+      padding:9px 13px;
+      border-radius:999px;
+      font-weight:900;
+      font-size:14px;
+      border:1px solid transparent;
+      text-align:center;
+    }
+
+    .tag.open{
+      background:rgba(39,209,124,.15);
+      border-color:rgba(39,209,124,.35);
+      color:#c8ffe5;
+    }
+
+    .tag.closed{
+      background:rgba(255,90,90,.15);
+      border-color:rgba(255,90,90,.35);
+      color:#ffd2d2;
+    }
+
+    .empty{
+      grid-column:1 / -1;
+      text-align:center;
+      color:var(--muted);
+      padding:40px 20px;
+      border:1px dashed var(--stroke);
+      border-radius:var(--radius);
+      align-self:start;
+      line-height:1.4;
+    }
+
+    .modalBackdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.72);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      z-index:9999;
+    }
+
+    .modalBackdrop.show{display:flex}
+
+    .modal{
+      width:min(520px,94vw);
+      max-height:90dvh;
+      overflow:auto;
+      background:#0b1220;
+      border:1px solid var(--stroke);
+      border-radius:22px;
+      padding:18px;
+      box-shadow:0 18px 50px rgba(0,0,0,.55);
+    }
+
+    .modal h2{
+      margin:0 0 14px;
+      text-align:center;
+    }
+
+    label{
+      display:block;
+      margin:12px 0 6px;
+      font-weight:800;
+    }
+
+    input{
+      width:100%;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.10);
+      color:white;
+      padding:13px;
+      border-radius:14px;
+      font-size:17px;
+    }
+
+    .row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    button{
+      border:0;
+      border-radius:14px;
+      padding:12px 14px;
+      font-size:16px;
+      font-weight:900;
+      cursor:pointer;
+    }
+
+    .mainBtn{
+      width:100%;
+      background:var(--green);
+      color:#062012;
+    }
+
+    .lightBtn{
+      background:rgba(255,255,255,.14);
+      color:white;
+      border:1px solid var(--stroke);
+    }
+
+    .dangerBtn{
+      background:rgba(255,90,90,.18);
+      color:#ffd0d0;
+      border:1px solid rgba(255,90,90,.35);
+    }
+
+    .btnRow{
+      display:flex;
+      gap:10px;
+      margin-top:16px;
+    }
+
+    .btnRow button{flex:1}
+
+    .listItem{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:10px;
+      border:1px solid var(--stroke);
+      border-radius:14px;
+      margin-top:10px;
+      background:rgba(255,255,255,.06);
+    }
+
+    .smallActions{
+      display:flex;
+      gap:6px;
+    }
+
+    .smallActions button{
+      font-size:14px;
+      padding:9px 10px;
+    }
+
+    .cropArea{
+      width:100%;
+      max-height:60dvh;
+      background:#050912;
+      border-radius:16px;
+      overflow:hidden;
+      margin-top:10px;
+    }
+
+    #cropImage{
+      display:block;
+      max-width:100%;
+    }
+
+    .cropper-view-box,
+    .cropper-face{
+      border-radius:50%;
+    }
+
+    .videoBox{
+      width:100%;
+      background:#050912;
+      border-radius:16px;
+      overflow:hidden;
+      border:1px solid var(--stroke);
+    }
+
+    .videoBox video{
+      display:block;
+      width:100%;
+      max-height:65dvh;
+      background:#000;
+    }
+
+    @media(max-width:390px){
+      .titleLogo{width:38px;height:38px}
+      .titleLine{gap:8px}
+      .card{min-height:215px}
+    }
+  </style>
+</head>
+
+<body>
+<div class="app">
+  <header>
+    <div class="titleLine">
+      <img src="telefon.png" alt="Telefon" class="titleLogo" id="hiddenAdminLogo">
+      <h1>Min telefon</h1>
+      <img src="telefon.png" alt="Telefon" class="titleLogo" id="helpVideoLogo">
+    </div>
+    <p class="hint">Tryk på et billede for at ringe</p>
+  </header>
+
+  <main class="grid" id="contactGrid"></main>
+</div>
+
+<div class="modalBackdrop" id="adminModal">
+  <div class="modal">
+    <h2>Administrer kontakter</h2>
+    <button class="mainBtn" id="newContactBtn">+ Opret ny person</button>
+    <div id="adminList"></div>
+    <button class="lightBtn" id="closeAdminBtn" style="width:100%;margin-top:14px;">Luk</button>
+  </div>
+</div>
+
+<div class="modalBackdrop" id="formModal">
+  <div class="modal">
+    <h2 id="formTitle">Opret person</h2>
+
+    <input type="hidden" id="editId">
+
+    <label>Navn</label>
+    <input id="nameInput" type="text" placeholder="Fx Mor">
+
+    <label>Telefonnummer</label>
+    <input id="phoneInput" type="tel" placeholder="Fx +4512345678">
+
+    <label>Billede</label>
+    <input id="imageInput" type="file" accept="image/*">
+
+    <div class="row">
+      <div>
+        <label>Spærret fra</label>
+        <input id="blockStartInput" type="time" value="22:00">
+      </div>
+      <div>
+        <label>Spærret til</label>
+        <input id="blockEndInput" type="time" value="08:00">
+      </div>
+    </div>
+
+    <div class="btnRow">
+      <button class="mainBtn" id="saveBtn">Gem</button>
+      <button class="lightBtn" id="cancelFormBtn">Annuller</button>
+    </div>
+  </div>
+</div>
+
+<div class="modalBackdrop" id="cropModal">
+  <div class="modal">
+    <h2>Beskær billede</h2>
+    <p style="text-align:center;color:rgba(255,255,255,.75);margin-top:-6px;">
+      Flyt og zoom billedet, så ansigtet passer i cirklen.
+    </p>
+
+    <div class="cropArea">
+      <img id="cropImage" alt="Billede til beskæring">
+    </div>
+
+    <div class="btnRow">
+      <button class="mainBtn" id="useCropBtn">Brug billede</button>
+      <button class="lightBtn" id="cancelCropBtn">Annuller</button>
+    </div>
+  </div>
+</div>
+
+<div class="modalBackdrop" id="videoModal">
+  <div class="modal">
+    <h2>Instruktion</h2>
+
+    <div class="videoBox">
+      <video id="instructionVideo" controls playsinline preload="metadata">
+        <source src="instruktion.mp4" type="video/mp4">
+        Din browser kan ikke afspille videoen.
+      </video>
+    </div>
+
+    <button class="mainBtn" id="closeVideoBtn" style="margin-top:14px;">Luk video</button>
+  </div>
+</div>
+
+<div class="modalBackdrop" id="blockedModal">
+  <div class="modal">
+    <h2>Lukket</h2>
+    <p style="text-align:center;color:rgba(255,255,255,.82);font-size:18px;">
+      Denne person kan ikke ringes til i dette tidsrum.
+    </p>
+    <button class="mainBtn" id="closeBlockedBtn">OK</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
+
+<script>
+  const STORAGE_KEY = "virtuelTelefonKontakterV5";
+
+  const contactGrid = document.getElementById("contactGrid");
+  const adminModal = document.getElementById("adminModal");
+  const formModal = document.getElementById("formModal");
+  const cropModal = document.getElementById("cropModal");
+  const videoModal = document.getElementById("videoModal");
+  const blockedModal = document.getElementById("blockedModal");
+
+  const hiddenAdminLogo = document.getElementById("hiddenAdminLogo");
+  const helpVideoLogo = document.getElementById("helpVideoLogo");
+
+  const closeAdminBtn = document.getElementById("closeAdminBtn");
+  const newContactBtn = document.getElementById("newContactBtn");
+  const adminList = document.getElementById("adminList");
+
+  const formTitle = document.getElementById("formTitle");
+  const editId = document.getElementById("editId");
+  const nameInput = document.getElementById("nameInput");
+  const phoneInput = document.getElementById("phoneInput");
+  const imageInput = document.getElementById("imageInput");
+  const blockStartInput = document.getElementById("blockStartInput");
+  const blockEndInput = document.getElementById("blockEndInput");
+
+  const saveBtn = document.getElementById("saveBtn");
+  const cancelFormBtn = document.getElementById("cancelFormBtn");
+  const closeBlockedBtn = document.getElementById("closeBlockedBtn");
+
+  const cropImage = document.getElementById("cropImage");
+  const useCropBtn = document.getElementById("useCropBtn");
+  const cancelCropBtn = document.getElementById("cancelCropBtn");
+
+  const instructionVideo = document.getElementById("instructionVideo");
+  const closeVideoBtn = document.getElementById("closeVideoBtn");
+
+  let contacts = loadContacts();
+
+  let leftLogoTapCount = 0;
+  let leftLogoTapTimer = null;
+
+  let rightLogoTapCount = 0;
+  let rightLogoTapTimer = null;
+
+  let cropper = null;
+  let croppedImageData = null;
+
+  function loadContacts(){
+    try{
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    }catch(e){
+      return [];
+    }
+  }
+
+  function saveContacts(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts));
+  }
+
+  function makeId(){
+    return Date.now().toString(36) + Math.random().toString(36).slice(2);
+  }
+
+  function parseHHMM(value){
+    const parts = value.split(":").map(Number);
+    return parts[0] * 60 + parts[1];
+  }
+
+  function minutesNow(){
+    const d = new Date();
+    return d.getHours() * 60 + d.getMinutes();
+  }
+
+  function isBlocked(contact){
+    const start = parseHHMM(contact.blockStart);
+    const end = parseHHMM(contact.blockEnd);
+    const now = minutesNow();
+
+    if(start === end) return true;
+
+    if(start < end){
+      return now >= start && now < end;
+    }
+
+    return now >= start || now < end;
+  }
+
+  function cleanPhone(phone){
+    return phone.replace(/\s+/g, "");
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, function(m){
+      return ({
+        "&":"&amp;",
+        "<":"&lt;",
+        ">":"&gt;",
+        '"':"&quot;",
+        "'":"&#039;"
+      })[m];
+    });
+  }
+
+  function renderContacts(){
+    contactGrid.innerHTML = "";
+
+    if(contacts.length === 0){
+      contactGrid.innerHTML = `
+        <div class="empty">
+          <h2>Ingen kontakter endnu</h2>
+          <p>Tryk 3 gange på telefon logoet øverst til venstre, for at oprette dine kontakter.</p>
+          <p>Tryk 3 gange på telefon logoet øverst til højre, for at se instruktionsvideoen.</p>
+        </div>
+      `;
+      return;
+    }
+
+    contacts.forEach(contact => {
+      const blocked = isBlocked(contact);
+
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const avatar = contact.image
+        ? `<div class="avatar"><img src="${contact.image}" alt="${escapeHtml(contact.name)}"></div>`
+        : `<div class="avatar">${escapeHtml(contact.name.charAt(0).toUpperCase())}</div>`;
+
+      card.innerHTML = `
+        ${avatar}
+        <div>
+          <p class="name">${escapeHtml(contact.name)}</p>
+          <p class="phone">${escapeHtml(contact.phone)}</p>
+          <div class="tag ${blocked ? "closed" : "open"}">
+            ${blocked ? "LUKKET" : "RING"}
+          </div>
+        </div>
+      `;
+
+      card.addEventListener("click", () => {
+        if(isBlocked(contact)){
+          blockedModal.classList.add("show");
+          return;
+        }
+
+        window.location.href = "tel:" + cleanPhone(contact.phone);
+      });
+
+      contactGrid.appendChild(card);
+    });
+  }
+
+  function renderAdminList(){
+    adminList.innerHTML = "";
+
+    if(contacts.length === 0){
+      adminList.innerHTML = `
+        <p style="text-align:center;color:rgba(255,255,255,.72);">
+          Ingen personer oprettet endnu.
+        </p>
+      `;
+      return;
+    }
+
+    contacts.forEach(contact => {
+      const item = document.createElement("div");
+      item.className = "listItem";
+
+      item.innerHTML = `
+        <div>
+          <strong>${escapeHtml(contact.name)}</strong><br>
+          <span style="color:rgba(255,255,255,.7);font-size:14px;">
+            ${escapeHtml(contact.phone)}
+          </span>
+        </div>
+        <div class="smallActions">
+          <button class="lightBtn">Ret</button>
+          <button class="dangerBtn">Slet</button>
+        </div>
+      `;
+
+      item.querySelector(".lightBtn").addEventListener("click", () => {
+        adminModal.classList.remove("show");
+        openEditForm(contact.id);
+      });
+
+      item.querySelector(".dangerBtn").addEventListener("click", () => {
+        if(confirm("Vil du slette " + contact.name + "?")){
+          contacts = contacts.filter(c => c.id !== contact.id);
+          saveContacts();
+          renderContacts();
+          renderAdminList();
+        }
+      });
+
+      adminList.appendChild(item);
+    });
+  }
+
+  function openAdmin(){
+    renderAdminList();
+    adminModal.classList.add("show");
+  }
+
+  function openVideo(){
+    videoModal.classList.add("show");
+
+    try{
+      instructionVideo.currentTime = 0;
+      const playPromise = instructionVideo.play();
+
+      if(playPromise && typeof playPromise.catch === "function"){
+        playPromise.catch(() => {});
+      }
+    }catch(e){}
+  }
+
+  function closeVideo(){
+    try{
+      instructionVideo.pause();
+      instructionVideo.currentTime = 0;
+    }catch(e){}
+
+    videoModal.classList.remove("show");
+  }
+
+  function openNewForm(){
+    formTitle.textContent = "Opret person";
+    editId.value = "";
+    nameInput.value = "";
+    phoneInput.value = "";
+    imageInput.value = "";
+    croppedImageData = null;
+    blockStartInput.value = "22:00";
+    blockEndInput.value = "08:00";
+    formModal.classList.add("show");
+  }
+
+  function openEditForm(id){
+    const contact = contacts.find(c => c.id === id);
+    if(!contact) return;
+
+    formTitle.textContent = "Rediger person";
+    editId.value = contact.id;
+    nameInput.value = contact.name;
+    phoneInput.value = contact.phone;
+    imageInput.value = "";
+    croppedImageData = null;
+    blockStartInput.value = contact.blockStart;
+    blockEndInput.value = contact.blockEnd;
+    formModal.classList.add("show");
+  }
+
+  function openCropperWithFile(file){
+    if(!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function(e){
+      cropImage.src = e.target.result;
+      cropModal.classList.add("show");
+
+      setTimeout(() => {
+        if(cropper){
+          cropper.destroy();
+          cropper = null;
+        }
+
+        cropper = new Cropper(cropImage, {
+          aspectRatio: 1,
+          viewMode: 1,
+          dragMode: "move",
+          autoCropArea: 0.9,
+          responsive: true,
+          background: false,
+          movable: true,
+          zoomable: true,
+          rotatable: false,
+          scalable: false,
+          cropBoxMovable: false,
+          cropBoxResizable: false,
+          toggleDragModeOnDblclick: false
+        });
+      }, 100);
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  imageInput.addEventListener("change", () => {
+    const file = imageInput.files[0];
+    if(file){
+      openCropperWithFile(file);
+    }
+  });
+
+  useCropBtn.addEventListener("click", () => {
+    if(!cropper) return;
+
+    const canvas = cropper.getCroppedCanvas({
+      width: 500,
+      height: 500,
+      imageSmoothingEnabled: true,
+      imageSmoothingQuality: "high"
+    });
+
+    croppedImageData = canvas.toDataURL("image/jpeg", 0.86);
+
+    cropper.destroy();
+    cropper = null;
+    cropModal.classList.remove("show");
+  });
+
+  cancelCropBtn.addEventListener("click", () => {
+    if(cropper){
+      cropper.destroy();
+      cropper = null;
+    }
+
+    croppedImageData = null;
+    imageInput.value = "";
+    cropModal.classList.remove("show");
+  });
+
+  async function saveForm(){
+    const name = nameInput.value.trim();
+    const phone = phoneInput.value.trim();
+    const blockStart = blockStartInput.value;
+    const blockEnd = blockEndInput.value;
+    const id = editId.value;
+
+    if(!name){
+      alert("Skriv et navn.");
+      return;
+    }
+
+    if(!phone){
+      alert("Skriv et telefonnummer.");
+      return;
+    }
+
+    if(id){
+      const contact = contacts.find(c => c.id === id);
+      if(!contact) return;
+
+      contact.name = name;
+      contact.phone = phone;
+      contact.blockStart = blockStart;
+      contact.blockEnd = blockEnd;
+
+      if(croppedImageData){
+        contact.image = croppedImageData;
+      }
+    }else{
+      contacts.push({
+        id: makeId(),
+        name,
+        phone,
+        image: croppedImageData,
+        blockStart,
+        blockEnd
+      });
+    }
+
+    saveContacts();
+    renderContacts();
+    renderAdminList();
+    formModal.classList.remove("show");
+  }
+
+  hiddenAdminLogo.addEventListener("click", () => {
+    leftLogoTapCount++;
+
+    if(leftLogoTapTimer){
+      clearTimeout(leftLogoTapTimer);
+    }
+
+    leftLogoTapTimer = setTimeout(() => {
+      leftLogoTapCount = 0;
+    }, 1200);
+
+    if(leftLogoTapCount >= 3){
+      leftLogoTapCount = 0;
+      clearTimeout(leftLogoTapTimer);
+      openAdmin();
+    }
+  });
+
+  helpVideoLogo.addEventListener("click", () => {
+    rightLogoTapCount++;
+
+    if(rightLogoTapTimer){
+      clearTimeout(rightLogoTapTimer);
+    }
+
+    rightLogoTapTimer = setTimeout(() => {
+      rightLogoTapCount = 0;
+    }, 1200);
+
+    if(rightLogoTapCount >= 3){
+      rightLogoTapCount = 0;
+      clearTimeout(rightLogoTapTimer);
+      openVideo();
+    }
+  });
+
+  closeAdminBtn.addEventListener("click", () => {
+    adminModal.classList.remove("show");
+  });
+
+  newContactBtn.addEventListener("click", () => {
+    adminModal.classList.remove("show");
+    openNewForm();
+  });
+
+  saveBtn.addEventListener("click", saveForm);
+
+  cancelFormBtn.addEventListener("click", () => {
+    formModal.classList.remove("show");
+  });
+
+  closeBlockedBtn.addEventListener("click", () => {
+    blockedModal.classList.remove("show");
+  });
+
+  closeVideoBtn.addEventListener("click", closeVideo);
+
+  instructionVideo.addEventListener("ended", closeVideo);
+
+  renderContacts();
+  setInterval(renderContacts, 15000);
+</script>
+</body>
+</html>
